@@ -1,16 +1,31 @@
-import { latestSensor, historySensor } from "../mock/sensor";
+import { apiRequest } from "./client";
+import { normalizeSensor } from "../utils/normalize";
+import { getMockHistorySensor, getMockLatestSensor } from "../mock/sensor";
 
 export const getLatestSensor = async () => {
-  return {
-    data: {
-      ...latestSensor,
-      temperature: 25 + Math.random() * 5,
-      humidity: 60 + Math.random() * 10,
-      timestamp: new Date().toISOString()
-    }
-  };
+  try {
+    const data = await apiRequest("/sensors/latest");
+    return { data: normalizeSensor(data) };
+  } catch (error) {
+    return {
+      data: normalizeSensor(getMockLatestSensor()),
+      fallback: true,
+      error
+    };
+  }
 };
 
 export const getHistorySensor = async () => {
-  return { data: historySensor };
+  try {
+    const data = await apiRequest("/sensors");
+    const list = Array.isArray(data) ? data : data?.items || data?.data || [];
+
+    return { data: list.map(normalizeSensor) };
+  } catch (error) {
+    return {
+      data: getMockHistorySensor().map(normalizeSensor),
+      fallback: true,
+      error
+    };
+  }
 };

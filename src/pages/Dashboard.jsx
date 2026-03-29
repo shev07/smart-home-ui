@@ -1,90 +1,277 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { controlDevice } from "../api/device";
 import { getLatestSensor } from "../api/sensor";
 import ChartTemp from "../components/ChartTemp";
 import Control from "../components/Control";
-import { Link } from "react-router-dom";
-import { controlDevice } from "../api/device";
 
-const cardStyle = {
-  border: "1px solid #e5e7eb",
-  padding: "20px",
-  borderRadius: "12px",
-  marginBottom: "20px",
-  background: "#ffffff",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.05)"
+const TEMP_THRESHOLD_KEY = "smart-home-temp-threshold";
+const DEFAULT_THRESHOLD = 32;
+
+const pageStyle = {
+  minHeight: "100vh",
+  padding: "32px 20px 48px",
+  background:
+    "radial-gradient(circle at top, rgba(56,189,248,0.22), transparent 30%), linear-gradient(180deg, #e0f2fe 0%, #f8fafc 38%, #eef2ff 100%)",
+  fontFamily: '"Segoe UI", sans-serif'
 };
 
-const containerStyle = {
-  maxWidth: "900px",
-  margin: "auto",
-  fontFamily: "sans-serif",
-  padding: "20px",
-  background: "#f3f4f6",
-  minHeight: "100vh"
+const shellStyle = {
+  maxWidth: "1120px",
+  margin: "0 auto"
+};
+
+const heroStyle = {
+  background: "#0f172a",
+  color: "#f8fafc",
+  borderRadius: "28px",
+  padding: "28px",
+  boxShadow: "0 24px 60px rgba(15, 23, 42, 0.18)"
+};
+
+const gridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+  gap: "18px",
+  marginTop: "22px"
+};
+
+const cardStyle = {
+  background: "rgba(255,255,255,0.92)",
+  borderRadius: "22px",
+  padding: "22px",
+  boxShadow: "0 18px 40px rgba(15, 23, 42, 0.08)",
+  marginTop: "20px"
+};
+
+const metricCardStyle = {
+  borderRadius: "20px",
+  padding: "22px",
+  background: "rgba(255,255,255,0.12)",
+  border: "1px solid rgba(255,255,255,0.14)"
 };
 
 function Dashboard() {
-  const TEMP_THRESHOLD = 32;
   const [data, setData] = useState(null);
+  const [deviceStatus, setDeviceStatus] = useState({ fan: "off", light: "off" });
+  const [threshold] = useState(() => {
+    const saved = Number(localStorage.getItem(TEMP_THRESHOLD_KEY));
+    return Number.isFinite(saved) && saved > 0 ? saved : DEFAULT_THRESHOLD;
+  });
+  const [warning, setWarning] = useState("");
+  const [error, setError] = useState("");
+  const [refreshDevicesAt, setRefreshDevicesAt] = useState(0);
+  const [pendingDevice, setPendingDevice] = useState("");
+  const lastAutomationRef = useRef("");
 
   useEffect(() => {
-    const fetchData = () => {
-      getLatestSensor().then(res => setData(res.data));
+    const fetchSensor = async () => {
+      try {
+        const res = await getLatestSensor();
+        setData(res.data);
+        setError("");
+      } catch (fetchError) {
+        setError(fetchError.message);
+      }
     };
 
-    fetchData();
-
-    const interval = setInterval(fetchData, 3000);
-
+    fetchSensor();
+    const interval = setInterval(fetchSensor, 3000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-  if (!data) return;
+    if (!data) {
+      return;
+    }
 
-  if (data.temperature > TEMP_THRESHOLD) {
-    controlDevice("fan", "on");
-  } else {
-    controlDevice("fan", "off");
+    const nextAction = data.temperature > threshold ? "on" : "off";
+    const shouldWarn = nextAction === "on";
+
+    setWarning(
+      shouldWarn
+        ? `Temperature too high. Auto-turning fan ON because ${data.temperature.toFixed(1)}°C > ${threshold}°C.`
+        : ""
+    );
+
+    if (lastAutomationRef.current === nextAction) {
+      return;
+    }
+
+    if (deviceStatus.fan === nextAction) {
+      lastAutomationRef.current = nextAction;
+      return;
+    }
+
+    let isActive = true;
+
+    const runAutomation = async () => {
+      try {
+        setPendingDevice("fan");
+        await controlDevice("fan", nextAction);
+
+        if (!isActive) {
+          return;
+        }
+
+        lastAutomationRef.current = nextAction;
+        setRefreshDevicesAt(Date.now());
+      } catch (automationError) {
+        if (isActive) {
+          setError(automationError.message);
+        }
+      } finally {
+        if (isActive) {
+          setPendingDevice("");
+        }
+      }
+    };
+
+    runAutomation();
+
+    return () => {
+      isActive = false;
+    };
+  }, [data, deviceStatus.fan, threshold]);
+
+  if (!data) {
+    return <div style={{ padding: "24px" }}>{error || "Loading dashboard..."}</div>;
   }
-  }, [data]);
 
-  if (!data) return <div>Loading...</div>;
+  return (
+    <div style={pageStyle}>
+      <div style={shellStyle}>
+        <section style={heroStyle}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "20px",
+              flexWrap: "wrap"
+            }}
+          >
+            <div>
+              <div style={{ color: "#7dd3fc", fontWeight: 700, letterSpacing: "0.08em" }}>
+                SMART HOME FLOW
+              </div>
+              <h1 style={{ fontSize: "2.2rem", margin: "10px 0 12px" }}>
+                Dashboard synced with backend control + ESP32 automation
+              </h1>
+              <p style={{ maxWidth: "700px", margin: 0, color: "#cbd5e1", lineHeight: 1.6 }}>
+                Frontend polls `GET /api/sensors/latest` every 3 seconds, triggers
+                automation when temperature exceeds the threshold, and refreshes
+                `GET /api/devices` after each control request so the UI reflects
+                backend state immediately.
+              </p>
+            </div>
 
- return (
-  <div style={containerStyle}>
-    <h1 style={{ marginBottom: "20px" }}>🏠 Smart Home Dashboard</h1>
+            <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
+              <Link to="/history" style={{ color: "#f8fafc" }}>
+                History
+              </Link>
+              <Link to="/settings" style={{ color: "#f8fafc" }}>
+                Settings
+              </Link>
+            </div>
+          </div>
 
-    <div style={{ marginBottom: "20px" }}>
-      <Link to="/history">📜 History</Link> |{" "}
-      <Link to="/settings">⚙️ Settings</Link>
-    </div>
+          <div style={gridStyle}>
+            <div style={metricCardStyle}>
+              <div style={{ color: "#94a3b8", marginBottom: "8px" }}>Temperature</div>
+              <div style={{ fontSize: "2.4rem", fontWeight: 800 }}>
+                {data ? `${data.temperature.toFixed(1)}°C` : "--"}
+              </div>
+            </div>
 
-    {data.temperature > TEMP_THRESHOLD && (
-      <div style={{ color: "red", marginBottom: "10px" }}>
-        ⚠️ Temperature too high!
+            <div style={metricCardStyle}>
+              <div style={{ color: "#94a3b8", marginBottom: "8px" }}>Humidity</div>
+              <div style={{ fontSize: "2.4rem", fontWeight: 800 }}>
+                {data ? `${data.humidity.toFixed(1)}%` : "--"}
+              </div>
+            </div>
+
+            <div style={metricCardStyle}>
+              <div style={{ color: "#94a3b8", marginBottom: "8px" }}>Automation Threshold</div>
+              <div style={{ fontSize: "2.4rem", fontWeight: 800 }}>{threshold}°C</div>
+            </div>
+          </div>
+        </section>
+
+        {warning && (
+          <section
+            style={{
+              ...cardStyle,
+              border: "1px solid #fca5a5",
+              background: "#fef2f2",
+              color: "#991b1b"
+            }}
+          >
+            <strong>Automation Alert</strong>
+            <div style={{ marginTop: "8px" }}>{warning}</div>
+          </section>
+        )}
+
+        {error && (
+          <section
+            style={{
+              ...cardStyle,
+              border: "1px solid #fecaca",
+              background: "#fff1f2",
+              color: "#9f1239"
+            }}
+          >
+            {error}
+          </section>
+        )}
+
+        <section style={cardStyle}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "16px"
+            }}
+          >
+            <div>
+              <div style={{ color: "#64748b", marginBottom: "6px" }}>Latest update</div>
+              <strong>{new Date(data.timestamp).toLocaleString()}</strong>
+            </div>
+
+            <div>
+              <div style={{ color: "#64748b", marginBottom: "6px" }}>Fan status</div>
+              <strong style={{ color: deviceStatus.fan === "on" ? "#16a34a" : "#64748b" }}>
+                {deviceStatus.fan}
+              </strong>
+            </div>
+
+            <div>
+              <div style={{ color: "#64748b", marginBottom: "6px" }}>Light status</div>
+              <strong style={{ color: deviceStatus.light === "on" ? "#d97706" : "#64748b" }}>
+                {deviceStatus.light}
+              </strong>
+            </div>
+          </div>
+        </section>
+
+        <section style={cardStyle}>
+          <ChartTemp />
+        </section>
+
+        <section style={cardStyle}>
+          <Control
+            refreshKey={refreshDevicesAt}
+            onStatusChange={setDeviceStatus}
+            pendingDevice={pendingDevice}
+          />
+        </section>
       </div>
-    )}
-
-    {/* SENSOR CARD */}
-    <div style={cardStyle}>
-      <h2>📡 Sensor</h2>
-      <h1>🌡 {data.temperature.toFixed(1)}°C</h1>
-      <h1>💧 {data.humidity.toFixed(1)}%</h1>
-      <p>{new Date(data.timestamp).toLocaleString()}</p>
     </div>
-
-    {/* CHART CARD */}
-    <div style={cardStyle}>
-      <ChartTemp />
-    </div>
-
-    {/* CONTROL CARD */}
-    <div style={cardStyle}>
-      <Control />
-    </div>
-  </div>
-);
+  );
 }
 
 export default Dashboard;
+
+
+
+

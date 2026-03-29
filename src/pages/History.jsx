@@ -1,23 +1,34 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getHistorySensor } from "../api/sensor";
 
 function History() {
   const [data, setData] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-  const fetchData = () => {
-    getHistorySensor().then(res => setData(res.data));
-  };
+    const fetchData = async () => {
+      try {
+        const res = await getHistorySensor();
+        setData(res.data);
+        setError("");
+      } catch (fetchError) {
+        setError(fetchError.message);
+      }
+    };
 
-  fetchData();
-  const interval = setInterval(fetchData, 5000);
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
 
-  return () => clearInterval(interval);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div>
-      <h1>📜 History</h1>
+    <div style={{ padding: "24px", fontFamily: '"Segoe UI", sans-serif' }}>
+      <Link to="/">Back to dashboard</Link>
+      <h1>Sensor History</h1>
+
+      {error && <p style={{ color: "#b91c1c" }}>{error}</p>}
 
       <table border="1" cellPadding="8">
         <thead>
@@ -43,3 +54,4 @@ function History() {
 }
 
 export default History;
+
