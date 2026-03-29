@@ -12,3 +12,14 @@ export const demoUsers = [
     fullName: "Khanh Demo"
   }
 ];
+
+export const updateDemoUserPassword = (username, nextPassword) => {
+  const user = demoUsers.find((item) => item.username === username);
+
+  if (!user) {
+    return null;
+  }
+
+  user.password = nextPassword;
+  return user;
+};

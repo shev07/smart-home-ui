@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import { demoUsers } from "../mock/auth";
+import { demoUsers, updateDemoUserPassword } from "../mock/auth";
 
 const TOKEN_KEY = "token";
 const USER_KEY = "auth_user";
@@ -56,9 +56,9 @@ export const loginUser = async ({ username, password }) => {
   }
 };
 
-export const recoverPassword = async ({ username, phone }) => {
+export const verifyRecoveryIdentity = async ({ username, phone }) => {
   try {
-    const data = await apiRequest("/auth/forgot-password", {
+    const data = await apiRequest("/auth/forgot-password/verify", {
       method: "POST",
       body: { username, phone }
     });
@@ -73,8 +73,36 @@ export const recoverPassword = async ({ username, phone }) => {
 
     return {
       data: {
-        password: user.password,
-        message: "Demo mode only. Do not return plaintext passwords in production."
+        recoveryId: `demo-recovery-${user.username}`,
+        username: user.username,
+        message: "Identity verified. You can set a new password now."
+      },
+      fallback: true,
+      error
+    };
+  }
+};
+
+export const resetPassword = async ({ username, phone, newPassword }) => {
+  try {
+    const data = await apiRequest("/auth/reset-password", {
+      method: "POST",
+      body: { username, phone, newPassword }
+    });
+
+    return { data, fallback: false };
+  } catch (error) {
+    const user = findDemoUser({ username, phone });
+
+    if (!user) {
+      throw new Error("Username and phone number do not match any account.");
+    }
+
+    updateDemoUserPassword(user.username, newPassword);
+
+    return {
+      data: {
+        message: "Password updated successfully. You can login with the new password now."
       },
       fallback: true,
       error
