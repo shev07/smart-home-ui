@@ -1,5 +1,6 @@
 ﻿import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { getStoredUser, logoutUser } from "../api/auth";
 import { controlDevice } from "../api/device";
 import { getLatestSensor } from "../api/sensor";
 import ChartTemp from "../components/ChartTemp";
@@ -52,8 +53,10 @@ const metricCardStyle = {
 };
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [deviceStatus, setDeviceStatus] = useState({ fan: "off", light: "off" });
+  const [user] = useState(() => getStoredUser());
   const [threshold] = useState(() => {
     const saved = Number(localStorage.getItem(TEMP_THRESHOLD_KEY));
     return Number.isFinite(saved) && saved > 0 ? saved : DEFAULT_THRESHOLD;
@@ -63,6 +66,11 @@ function Dashboard() {
   const [refreshDevicesAt, setRefreshDevicesAt] = useState(0);
   const [pendingDevice, setPendingDevice] = useState("");
   const lastAutomationRef = useRef("");
+
+  const handleLogout = () => {
+    logoutUser();
+    navigate("/login", { replace: true });
+  };
 
   useEffect(() => {
     const fetchSensor = async () => {
@@ -166,13 +174,30 @@ function Dashboard() {
               </p>
             </div>
 
-            <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", alignItems: "center" }}>
+              <div style={{ color: "#cbd5e1" }}>
+                {user?.fullName || user?.username || "Guest"}
+              </div>
               <Link to="/history" style={{ color: "#f8fafc" }}>
                 History
               </Link>
               <Link to="/settings" style={{ color: "#f8fafc" }}>
                 Settings
               </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={{
+                  border: "1px solid rgba(248,250,252,0.25)",
+                  background: "transparent",
+                  color: "#f8fafc",
+                  borderRadius: "999px",
+                  padding: "10px 14px",
+                  cursor: "pointer"
+                }}
+              >
+                Logout
+              </button>
             </div>
           </div>
 

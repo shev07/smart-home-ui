@@ -1,15 +1,45 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { isAuthenticated } from "./api/auth";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
+import ForgotPassword from "./pages/ForgotPassword";
 import History from "./pages/History";
+import Login from "./pages/Login";
 import Settings from "./pages/Settings";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/history" element={<History />} />
+        <Route
+          path="/login"
+          element={isAuthenticated() ? <Navigate to="/" replace /> : <Login />}
+        />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <History />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
