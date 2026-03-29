@@ -1,176 +1,125 @@
-# 🏠 Smart Home Web App
+﻿# Smart Home UI
 
-## 📌 Overview
+Frontend dashboard for a smart home demo with:
 
-This project is a **Smart Home Web Application** that allows users to monitor environmental data and control devices remotely.
+- sensor monitoring
+- device control
+- temperature-based automation
+- automatic fallback to mock data when the backend is offline
 
-The system simulates a real IoT architecture using:
+The UI is structured around a real backend flow, but it can still be previewed without a backend during demo or design work.
 
-* Sensor data (temperature & humidity)
-* Device control (fan & light)
-* Automation rules
-* Real-time dashboard visualization
+## Features
 
----
+- Dashboard showing latest temperature and humidity
+- Fan and light control with ON/OFF actions
+- Auto refresh for sensor data and device status
+- Automation that turns the fan on when temperature passes the threshold
+- History page for sensor records
+- Settings page for local temperature threshold
+- Chart view using Recharts
+- Mock fallback when API requests fail
 
-## 🎯 Features
+## Runtime Behavior
 
-### 📡 Sensor Monitoring
+### Frontend control flow
 
-* Display **temperature & humidity**
-* Auto-refresh every few seconds
-* Real-time simulation (mock data)
+1. User clicks a device action in the dashboard.
+2. Frontend sends `POST /api/devices/control`.
+3. Frontend fetches `GET /api/devices` again to sync UI state.
+4. Device cards re-render with the latest status.
 
-### 📈 Data Visualization
+### Frontend automation flow
 
-* Line chart for:
+1. Dashboard polls `GET /api/sensors/latest` every 3 seconds.
+2. If temperature is above the configured threshold, frontend triggers `controlDevice("fan", "on")`.
+3. If temperature drops below the threshold, frontend triggers `controlDevice("fan", "off")`.
+4. The dashboard shows an automation warning when the threshold is exceeded.
 
-  * Temperature
-  * Humidity
-* Time-based history tracking
+### Fallback behavior
 
-### 🎮 Device Control
+If the backend is unavailable, the app automatically falls back to local mock data:
 
-* Turn **fan / light ON/OFF**
-* Display current device status
+- sensor endpoints return generated demo values
+- device control updates local mock state
+- the UI remains usable for presentation and layout testing
 
-### ⚠️ Alert System
+## API Expectations
 
-* Show warning when temperature exceeds threshold
-
-### 🤖 Automation
-
-* Automatically turn on fan when:
-
-```text
-Temperature > threshold
-```
-
-### 📜 History Page
-
-* Table view of sensor data
-* Timestamp + values
-
-### ⚙️ Settings Page
-
-* (Basic UI) for future configuration
-
----
-
-## 🧠 System Architecture
-
-### Sensor Data Flow
+Default API base URL:
 
 ```text
-ESP32 → HTTP POST → Backend → Database → Web UI
+http://localhost:5000/api
 ```
 
-### Device Control Flow
+You can override it with:
 
-```text
-Web UI → Backend → Command → ESP32 → Relay → Device
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
 ```
 
----
+Expected endpoints:
 
-## 🛠 Tech Stack
+- `GET /api/sensors/latest`
+- `GET /api/sensors`
+- `GET /api/devices`
+- `POST /api/devices/control`
 
-* **Frontend:** React (Vite)
-* **Chart:** Recharts
-* **Backend (planned):** Node.js + Express
-* **Database (planned):** MongoDB
-* **Hardware (planned):** ESP32
+Example control payload:
 
----
+```json
+{
+  "deviceId": "fan",
+  "action": "on"
+}
+```
 
-## 📂 Project Structure
+## Tech Stack
+
+- React 19
+- Vite 8
+- React Router
+- Recharts
+
+## Project Structure
 
 ```text
 src/
- ├── api/          # API layer (mock / real switch)
- ├── mock/         # Mock data
- ├── pages/        # Dashboard, History, Settings
- ├── components/   # Chart, Control
+  api/          API layer and backend client
+  components/   Reusable UI blocks
+  mock/         Local fallback data
+  pages/        Dashboard, History, Settings
+  utils/        Response normalization helpers
 ```
 
----
+## Getting Started
 
-## 🚀 Getting Started
-
-### 1. Install dependencies
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### 2. Run project
+Run development server:
 
 ```bash
 npm run dev
 ```
 
-### 3. Open in browser
+Build production bundle:
+
+```bash
+npm run build
+```
+
+Open:
 
 ```text
 http://localhost:5173
 ```
 
----
+## Notes
 
-## 🔌 API Contract
-
-### Sensor Data
-
-```json
-{
-  "deviceId": "esp32-01",
-  "temperature": 30.5,
-  "humidity": 65.2,
-  "timestamp": "2026-03-11T10:00:00Z"
-}
-```
-
-### Device Control
-
-```json
-{
-  "device": "fan",
-  "action": "on"
-}
-```
-
----
-
-## ⚡ Demo Highlights
-
-* Real-time dashboard
-* Interactive chart
-* Device control UI
-* Automation logic
-* Clean UI layout
-
----
-
-## 📌 Notes
-
-* Currently using **mock data** for development
-* Backend integration can be added without changing UI
-* Designed for **fast prototyping and demo stability**
-
----
-
-## 👨‍💻 Author
-
-* Frontend: Khánh
-* Team project (Smart Home System)
-
----
-
-## 🚀 Future Improvements
-
-* Connect real backend API
-* Integrate ESP32 hardware
-* Add authentication (login/register)
-* Enhance UI (dark mode, animations)
-
----
+- JWT is read from `localStorage.getItem("token")` when calling the backend.
+- The current version is safe to demo even without backend services.
+- Once the backend is ready, the same UI can switch to live data without changing the page structure.
