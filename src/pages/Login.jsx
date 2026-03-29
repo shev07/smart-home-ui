@@ -4,18 +4,35 @@ import { loginUser } from "../api/auth";
 
 const pageStyle = {
   minHeight: "100vh",
-  display: "grid",
-  placeItems: "center",
-  padding: "24px",
+  padding: "32px 20px 48px",
   background:
-    "linear-gradient(135deg, rgba(14,165,233,0.16), rgba(15,23,42,0.12)), linear-gradient(180deg, #e0f2fe 0%, #f8fafc 50%, #eef2ff 100%)",
+    "radial-gradient(circle at top, rgba(56,189,248,0.22), transparent 30%), linear-gradient(180deg, #e0f2fe 0%, #f8fafc 38%, #eef2ff 100%)",
   fontFamily: '"Segoe UI", sans-serif'
 };
 
-const cardStyle = {
-  width: "100%",
-  maxWidth: "420px",
-  borderRadius: "24px",
+const shellStyle = {
+  maxWidth: "1120px",
+  margin: "0 auto",
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1.15fr) minmax(340px, 420px)",
+  gap: "24px",
+  alignItems: "stretch"
+};
+
+const heroStyle = {
+  background: "#0f172a",
+  color: "#f8fafc",
+  borderRadius: "28px",
+  padding: "32px",
+  boxShadow: "0 24px 60px rgba(15, 23, 42, 0.18)",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "space-between",
+  minHeight: "580px"
+};
+
+const authCardStyle = {
+  borderRadius: "28px",
   padding: "28px",
   background: "rgba(255,255,255,0.92)",
   boxShadow: "0 24px 64px rgba(15, 23, 42, 0.14)"
@@ -74,73 +91,144 @@ function Login() {
 
   return (
     <div style={pageStyle}>
-      <div style={cardStyle}>
-        <div style={{ color: "#0ea5e9", fontWeight: 700, letterSpacing: "0.08em" }}>
-          SMART HOME ACCESS
-        </div>
-        <h1 style={{ margin: "12px 0 8px", color: "#0f172a" }}>Login</h1>
-        <p style={{ margin: 0, color: "#475569", lineHeight: 1.6 }}>
-          Use your account to access the dashboard. If no backend is available,
-          demo users still work through local fallback.
-        </p>
-
-        <div
-          style={{
-            marginTop: "18px",
-            borderRadius: "14px",
-            background: "#eff6ff",
-            color: "#1d4ed8",
-            padding: "12px 14px"
-          }}
-        >
-          Demo accounts: `admin / admin123` or `khanh / khanh123`
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ marginTop: "20px", display: "grid", gap: "16px" }}>
-          <label>
-            <div style={{ color: "#334155", fontWeight: 600 }}>Username</div>
-            <input
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              style={inputStyle}
-              placeholder="Enter username"
-            />
-          </label>
-
-          <label>
-            <div style={{ color: "#334155", fontWeight: 600 }}>Password</div>
-            <input
-              type="password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              style={inputStyle}
-              placeholder="Enter password"
-            />
-          </label>
-
-          {error && (
-            <div style={{ borderRadius: "12px", background: "#fef2f2", color: "#b91c1c", padding: "12px 14px" }}>
-              {error}
+      <div style={shellStyle}>
+        <section style={heroStyle}>
+          <div>
+            <div style={{ color: "#7dd3fc", fontWeight: 700, letterSpacing: "0.08em" }}>
+              SMART HOME ACCESS
             </div>
-          )}
+            <h1 style={{ fontSize: "2.6rem", margin: "14px 0 12px", lineHeight: 1.1 }}>
+              Login panel aligned with the dashboard flow
+            </h1>
+            <p style={{ maxWidth: "620px", margin: 0, color: "#cbd5e1", lineHeight: 1.7 }}>
+              Sign in to open the smart home dashboard, test protected routes,
+              and review the device automation UI. If the backend is offline,
+              the app still works with local auth fallback.
+            </p>
+          </div>
 
-          {modeLabel && (
-            <div style={{ borderRadius: "12px", background: "#ecfeff", color: "#155e75", padding: "12px 14px" }}>
-              {modeLabel}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "14px"
+            }}
+          >
+            <div
+              style={{
+                borderRadius: "18px",
+                padding: "18px",
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.12)"
+              }}
+            >
+              <div style={{ color: "#7dd3fc", fontWeight: 700 }}>Step 1</div>
+              <div style={{ marginTop: "8px", color: "#e2e8f0" }}>Login stores a token in `localStorage`.</div>
             </div>
-          )}
 
-          <button type="submit" style={buttonStyle} disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Login"}
-          </button>
-        </form>
+            <div
+              style={{
+                borderRadius: "18px",
+                padding: "18px",
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.12)"
+              }}
+            >
+              <div style={{ color: "#7dd3fc", fontWeight: 700 }}>Step 2</div>
+              <div style={{ marginTop: "8px", color: "#e2e8f0" }}>Protected routes open dashboard, history, and settings.</div>
+            </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "18px", gap: "12px", flexWrap: "wrap" }}>
-          <Link to="/forgot-password">Forgot password?</Link>
-          <Link to="/">Back to app</Link>
-        </div>
+            <div
+              style={{
+                borderRadius: "18px",
+                padding: "18px",
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.12)"
+              }}
+            >
+              <div style={{ color: "#7dd3fc", fontWeight: 700 }}>Step 3</div>
+              <div style={{ marginTop: "8px", color: "#e2e8f0" }}>Forgot password verifies identity before reset.</div>
+            </div>
+          </div>
+        </section>
+
+        <section style={authCardStyle}>
+          <div style={{ color: "#0ea5e9", fontWeight: 700, letterSpacing: "0.08em" }}>
+            SIGN IN
+          </div>
+          <h2 style={{ margin: "12px 0 8px", color: "#0f172a", fontSize: "2rem" }}>Welcome back</h2>
+          <p style={{ margin: 0, color: "#475569", lineHeight: 1.6 }}>
+            Use a demo account or your backend account if the auth API is available.
+          </p>
+
+          <div
+            style={{
+              marginTop: "18px",
+              borderRadius: "16px",
+              background: "#eff6ff",
+              color: "#1d4ed8",
+              padding: "14px 16px"
+            }}
+          >
+            <div style={{ fontWeight: 700 }}>Demo accounts</div>
+            <div style={{ marginTop: "6px" }}>`admin / admin123`</div>
+            <div>`khanh / khanh123`</div>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ marginTop: "20px", display: "grid", gap: "16px" }}>
+            <label>
+              <div style={{ color: "#334155", fontWeight: 600 }}>Username</div>
+              <input
+                name="username"
+                value={form.username}
+                onChange={handleChange}
+                style={inputStyle}
+                placeholder="Enter username"
+              />
+            </label>
+
+            <label>
+              <div style={{ color: "#334155", fontWeight: 600 }}>Password</div>
+              <input
+                type="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                style={inputStyle}
+                placeholder="Enter password"
+              />
+            </label>
+
+            {error && (
+              <div style={{ borderRadius: "12px", background: "#fef2f2", color: "#b91c1c", padding: "12px 14px" }}>
+                {error}
+              </div>
+            )}
+
+            {modeLabel && (
+              <div style={{ borderRadius: "12px", background: "#ecfeff", color: "#155e75", padding: "12px 14px" }}>
+                {modeLabel}
+              </div>
+            )}
+
+            <button type="submit" style={buttonStyle} disabled={isSubmitting}>
+              {isSubmitting ? "Signing in..." : "Login"}
+            </button>
+          </form>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: "18px",
+              gap: "12px",
+              flexWrap: "wrap"
+            }}
+          >
+            <Link to="/forgot-password">Forgot password?</Link>
+            <Link to="/">Back to app</Link>
+          </div>
+        </section>
       </div>
     </div>
   );
